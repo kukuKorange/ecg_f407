@@ -1,0 +1,18 @@
+# Keil MDK build outputs
+Project/Objects/
+Project/Listings/
+
+# Keil MDK user-specific files
+*.uvguix.*
+*.uvoptx
+JLinkSettings.ini
+DebugConfig/
+
+# Keil MDK temporary files
+*.bak
+*.dep
+*.build_log.htm
+*.scvd
+
+# Keil kill batch
+keilkilll.bat
