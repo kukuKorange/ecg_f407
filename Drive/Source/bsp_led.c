@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    bsp_led.c
-  * @brief   RGB LED驱动 (STM32F407)
+  * @brief   LED驱动 (STM32F407, PF4)
   ******************************************************************************
   */
 
@@ -16,16 +16,16 @@ void LED_RGB_Config(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
+    RCC_AHB1PeriphClockCmd(ECG_LED_CLK, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = LED1_PIN | LED2_PIN | LED3_PIN;
+    GPIO_InitStructure.GPIO_Pin = ECG_LED_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_Init(GPIOE, &GPIO_InitStructure);
+    GPIO_Init(ECG_LED_PORT, &GPIO_InitStructure);
 
-    LED_RGBOFF;
+    ECG_LED_OFF;
 }
 
 #ifdef ENABLE_LED_INDICATOR
@@ -42,11 +42,11 @@ void LED_StatusUpdate(void)
     if (ecg_hr >= HR_ALARM_THRESHOLD_HIGH ||
         (ecg_hr > 0 && ecg_hr <= HR_ALARM_THRESHOLD_LOW))
     {
-        LED1_ON;  /* 红灯报警 */
+        ECG_LED_ON;  /* 报警亮灯 */
     }
     else
     {
-        LED1_OFF;
+        ECG_LED_OFF;
     }
 }
 #endif

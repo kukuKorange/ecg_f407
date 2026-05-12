@@ -78,8 +78,8 @@ void AD8232Init(void)
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
 
-    /* PE0 (LO+) 浮空输入 */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+    /* PE4 (LO+), PE6 (LO-) 浮空输入 */
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -88,8 +88,8 @@ void AD8232Init(void)
 
 uint8_t GetConnect(void)
 {
-    uint8_t LO_plus  = GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_0);
-    uint8_t LO_minus = GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_1);
+    uint8_t LO_plus  = GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_4);
+    uint8_t LO_minus = GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_6);
 
     return ((LO_plus == 0) && (LO_minus == 0)) ? 1 : 0;
 }

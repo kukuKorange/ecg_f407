@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    usart2.c
   * @brief   USART2串口驱动 (STM32F407, ESP8266通信)
-  * @note    PA2=TX(AF7), PA3=RX(AF7), 中断接收, 帧结束: \r\n
+  * @note    PD5=TX(AF7), PD6=RX(AF7), 中断接收, 帧结束: \r\n
   ******************************************************************************
   */
 
@@ -25,19 +25,19 @@ void usart2_init(uint32_t bound)
     USART_InitTypeDef USART_InitStructure;
 
     /* 使能时钟 */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
-    /* PA2(TX), PA3(RX) 复用功能 */
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_USART2);
+    /* PD5(TX), PD6(RX) 复用功能AF7 */
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART2);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
 
     /* NVIC */
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;

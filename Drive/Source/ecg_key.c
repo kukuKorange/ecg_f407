@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    ecg_key.c
   * @brief   3按键驱动 (STM32F407)
-  * @note    Key1=PB12(上一页), Key2=PB13(功能), Key3=PB14(下一页)
+  * @note    Key1=PC1(上一页), Key2=PC3(功能), Key3=PC2(下一页)
   ******************************************************************************
   */
 
@@ -16,32 +16,35 @@ void ECG_Key_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 uint8_t Key_GetNum(void)
 {
     uint8_t KeyNum = 0;
 
-    if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12) == 0)
+    /* Key1: PC1 */
+    if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == 0)
     {
-        while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12) == 0);
+        while (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == 0);
         KeyNum = 1;
     }
-    if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_13) == 0)
+    /* Key2: PC3 */
+    if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_3) == 0)
     {
-        while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_13) == 0);
+        while (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_3) == 0);
         KeyNum = 2;
     }
-    if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0)
+    /* Key3: PC2 */
+    if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_2) == 0)
     {
-        while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0);
+        while (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_2) == 0);
         KeyNum = 3;
     }
 

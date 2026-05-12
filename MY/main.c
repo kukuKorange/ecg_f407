@@ -25,6 +25,7 @@
 #include "usart2.h"
 #include "esp8266.h"
 #include "ecg_key.h"
+#include "beep.h"
 
 /* 功能模块 */
 #ifdef USE_ECG_SIM
@@ -72,6 +73,9 @@ int main(void)
     ECG_Sim_Init(ECG_SIM_BPM);
 #endif
 
+    /* 蜂鸣器初始化 */
+    Beep_Init();
+
     /* 按键初始化 */
     ECG_Key_Init();
 
@@ -91,9 +95,10 @@ int main(void)
         /* 页面显示更新 */
         Display_Update();
 
-        /* LED状态指示 */
+        /* LED + 蜂鸣器报警 */
 #ifdef ENABLE_LED_INDICATOR
         LED_StatusUpdate();
+        Beep_AlarmUpdate();
 #endif
 
         /* 数据传输处理 */

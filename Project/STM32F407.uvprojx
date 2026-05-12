@@ -475,6 +475,11 @@
               <FilePath>..\Drive\Source\bsp_led.c</FilePath>
             </File>
             <File>
+              <FileName>beep.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\beep.c</FilePath>
+            </File>
+            <File>
               <FileName>ecg_sim.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Drive\Source\ecg_sim.c</FilePath>
