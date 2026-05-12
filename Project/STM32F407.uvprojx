@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,STM32F40_41xxx,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\STM32\CMSIS\Device\ST\STM32F4xx\Include;..\STM32\CMSIS\Include;..\STM32\STM32F4xx_StdPeriph_Driver\inc;..\MY;..\Drive\Include</IncludePath>
+              <IncludePath>..\STM32\CMSIS\Device\ST\STM32F4xx\Include;..\STM32\CMSIS\Include;..\STM32\STM32F4xx_StdPeriph_Driver\inc;..\MY;..\Drive\Include;..\Drive\Source</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -439,6 +439,56 @@
               <FileType>1</FileType>
               <FilePath>..\Drive\Source\lcd_spi_154.c</FilePath>
             </File>
+            <File>
+              <FileName>ad.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\ad.c</FilePath>
+            </File>
+            <File>
+              <FileName>ad8232.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\ad8232.c</FilePath>
+            </File>
+            <File>
+              <FileName>timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>usart2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\usart2.c</FilePath>
+            </File>
+            <File>
+              <FileName>esp8266.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\esp8266.c</FilePath>
+            </File>
+            <File>
+              <FileName>ecg_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\ecg_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\bsp_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>ecg_sim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\ecg_sim.c</FilePath>
+            </File>
+            <File>
+              <FileName>display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\display.c</FilePath>
+            </File>
+            <File>
+              <FileName>transmit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drive\Source\transmit.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -478,6 +528,16 @@
               <FileName>stm32f4xx_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\STM32\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\STM32\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\STM32\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c</FilePath>
             </File>
           </Files>
         </Group>

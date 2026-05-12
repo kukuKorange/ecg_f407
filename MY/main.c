@@ -1,373 +1,113 @@
-/***
-	***************************************************************************************************
-	*	@file  	main.c
-	*	@version V1.0
-	*	@author  Â¹Ð¡°à¿Æ¼¼	
-	*	@brief   SPIÇý¶¯ÏÔÊ¾ÆÁ£¬ÆÁÄ»¿ØÖÆÆ÷ ST7789
-   ****************************************************************************************************
-   *  @description
-	*
-	*	ÊµÑéÆ½Ì¨£ºÂ¹Ð¡°àSTM32F407ZGT6ºËÐÄ°å £¨ÐÍºÅ£ºLXB407ZG-P1£©
-	* ¿Í·þÎ¢ÐÅ£º19949278543
-   *
->>>>> ÆäËûËµÃ÷£º
-	*
-	*	1. ÖÐÎÄ×Ö¿âÊ¹ÓÃµÄÊÇÐ¡×Ö¿â£¬¼´ÓÃµ½ÁË¶ÔÓ¦µÄºº×ÖÔÙÈ¥È¡Ä££¬ÓÃ»§¿ÉÒÔ¸ù¾ÝÐèÇó×ÔÐÐÔöÌí»òÉ¾¼õ
-	*	2. ¸÷¸öº¯ÊýµÄ¹¦ÄÜºÍÊ¹ÓÃ¿ÉÒÔ²Î¿¼º¯ÊýµÄËµÃ÷
-	*
-	***************************************************************************************************
-***/
+/**
+  ******************************************************************************
+  * @file    main.c
+  * @brief   ECGå¿ƒç”µç›‘æµ‹ç³»ç»Ÿ - STM32F407ZGT6
+  *
+  * @details ä»Žecg_stm(F103)ç§»æ¤ï¼Œä½¿ç”¨240x240 LCDæ›¿ä»£OLED
+  *          æ”¯æŒè®¾å¤‡: AD8232å¿ƒç”µ, ESP8266 WiFi, RGB LED, 3æŒ‰é”®, LCD
+  ******************************************************************************
+  */
 
-
+#include "main.h"
 #include "stm32f4xx.h"
-#include "led.h"   
+
+/* å¤–è®¾é©±åŠ¨ */
 #include "delay.h"
-#include "key.h"  
+#include "led.h"
 #include "usart.h"
 #include "lcd_spi_154.h"
 
-// LCD²âÊÔº¯Êý£¬º¯Êý¶¨ÒåÔÚµ×²¿
-void 	LCD_Test_Clear(void);			// ÇåÆÁ²âÊÔ
-void 	LCD_Test_Text(void);			   // ÎÄ±¾²âÊÔ
-void 	LCD_Test_Variable (void);	   // ±äÁ¿ÏÔÊ¾£¬°üÀ¨ÕûÊýºÍÐ¡Êý
-void 	LCD_Test_Color(void);			// ¾ØÐÎÌî³ä²âÊÔ
-void 	LCD_Test_Grahic(void);		   // 2DÍ¼ÐÎ»æÖÆ
-void 	LCD_Test_Image(void);			// Í¼Æ¬ÏÔÊ¾
-void  LCD_Test_Direction(void);	   // ¸ü»»ÏÔÊ¾·½Ïò
+/* ECGé©±åŠ¨ */
+#include "bsp_led.h"
+#include "ad.h"
+#include "ad8232.h"
+#include "timer.h"
+#include "usart2.h"
+#include "esp8266.h"
+#include "ecg_key.h"
 
+/* åŠŸèƒ½æ¨¡å— */
+#ifdef USE_ECG_SIM
+#include "ecg_sim.h"
+#endif
+#include "display.h"
+#include "transmit.h"
 
-/***************************************************************************************************
-*	º¯ Êý Ãû: main
-*	Èë¿Ú²ÎÊý: ÎÞ
-*	·µ »Ø Öµ: ÎÞ
-*	º¯Êý¹¦ÄÜ: ÔËÐÐÖ÷³ÌÐò
-*	Ëµ    Ã÷: ÎÞ
-****************************************************************************************************/
+/*============================ å…¨å±€å˜é‡ ============================*/
+
+volatile uint8_t display_refresh_flag = 0;
+
+#ifdef ENABLE_DEBUG_PAGE
+volatile uint8_t debug_refresh_flag = 0;
+static uint32_t loop_start_ms = 0;
+uint32_t display_loop_time_ms = 0;
+uint32_t display_loop_time_max_ms = 0;
+#endif
+
+/*============================ ä¸»å‡½æ•° ============================*/
 
 int main(void)
 {
-	Delay_Init();		//ÑÓÊ±º¯Êý³õÊ¼»¯
-	LED_Init();			//LED³õÊ¼»¯
-	KEY_Init();			//°´¼üIO¿Ú³õÊ¼»¯
-	Usart_Config ();	// USART³õÊ¼»¯º¯Êý
-	
-	SPI_LCD_Init();	// LCD³õÊ¼»¯
+    /* NVICä¼˜å…ˆçº§åˆ†ç»„ */
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-	while (1)
-	{
-		LCD_Test_Clear(); 		// ÇåÆÁ²âÊÔ
-		LCD_Test_Text();			// ÎÄ±¾²âÊÔ
-		LCD_Test_Variable();		// ±äÁ¿ÏÔÊ¾£¬°üÀ¨ÕûÊýºÍÐ¡Êý
-		LCD_Test_Color();			// ÑÕÉ«²âÊÔ
-		LCD_Test_Grahic();		// 2DÍ¼ÐÎ»æÖÆ	
-		LCD_Test_Image();			// Í¼Æ¬ÏÔÊ¾
-		LCD_Test_Direction();	// ¸ü»»ÏÔÊ¾·½Ïò	
-	}
+    /* åŸºç¡€å¤–è®¾åˆå§‹åŒ– */
+    Delay_Init();
+    LED_Init();          /* æ¿è½½LED (PC13) */
+    LED_RGB_Config();    /* RGB LED (PE2/3/4) */
+    Usart_Config();      /* USART1è°ƒè¯•ä¸²å£ */
+    SPI_LCD_Init();      /* LCDåˆå§‹åŒ– */
+
+    /* ESP8266åˆå§‹åŒ– (USART2, WiFi + MQTT) */
+    usart2_init(115200);
+    ESP8266_Init();
+    Transmit_Init();
+
+    /* å¿ƒç”µå›¾å¤–è®¾ */
+    AD_Init();
+    AD8232Init();
+    Timer3_Init();
+
+#ifdef USE_ECG_SIM
+    ECG_Sim_Init(ECG_SIM_BPM);
+#endif
+
+    /* æŒ‰é”®åˆå§‹åŒ– */
+    ECG_Key_Init();
+
+    /* æ¸…å±å‡†å¤‡æ˜¾ç¤º */
+    LCD_SetBackColor(LCD_BLACK);
+    LCD_Clear();
+
+    while (1)
+    {
+#ifdef ENABLE_DEBUG_PAGE
+        loop_start_ms = tim3_ms_counter;
+#endif
+
+        /* æŒ‰é”®å¤„ç† */
+        Key_Process();
+
+        /* é¡µé¢æ˜¾ç¤ºæ›´æ–° */
+        Display_Update();
+
+        /* LEDçŠ¶æ€æŒ‡ç¤º */
+#ifdef ENABLE_LED_INDICATOR
+        LED_StatusUpdate();
+#endif
+
+        /* æ•°æ®ä¼ è¾“å¤„ç† */
+        Transmit_Process();
+
+#ifdef ENABLE_DEBUG_PAGE
+        display_loop_time_ms = tim3_ms_counter - loop_start_ms;
+        if (display_loop_time_ms > display_loop_time_max_ms)
+            display_loop_time_max_ms = display_loop_time_ms;
+#endif
+    }
 }
 
-
-
-/*************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Clear
-*
-*	º¯Êý¹¦ÄÜ:	ÇåÆÁ²âÊÔ
-*************************************************************************************************/
-void LCD_Test_Clear(void)
+void Error_Handler(void)
 {
-	uint8_t	i = 0;			// ¼ÆÊý±äÁ¿
-			
-	LCD_SetTextFont(&CH_Font24);			// ÉèÖÃ2424ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª2412
-	LCD_SetColor(LCD_BLACK);				// ÉèÖÃ»­±ÊÑÕÉ«
-
-	for(i=0;i<8;i++)
-	{
-		switch (i)		// ÇÐ»»±³¾°É«
-		{
-			case 0: LCD_SetBackColor(LIGHT_RED); 		break;	
-			case 1: LCD_SetBackColor(LIGHT_GREEN); 	break;				
-			case 2: LCD_SetBackColor(LIGHT_BLUE); 		break;
-			case 3: LCD_SetBackColor(LIGHT_YELLOW); 	break;
-			case 4: LCD_SetBackColor(LIGHT_CYAN);		break;
-			case 5: LCD_SetBackColor(LIGHT_GREY); 		break;
-			case 6: LCD_SetBackColor(LIGHT_MAGENTA); 	break;
-			case 7: LCD_SetBackColor(LCD_WHITE); 		break;			
-			default:	break;			
-		}
-		LCD_Clear();		// ÇåÆÁ
-		LCD_DisplayText(13, 70,"STM32 Ë¢ÆÁ²âÊÔ");
-		LCD_DisplayText(13,106,"ÆÁÄ»·Ö±æÂÊ:240*240");
-		LCD_DisplayText(13,142,"¿ØÖÆÆ÷:ST7789");	
-		Delay_ms(1000);	// ÑÓÊ±
-	}
-}
-
-/*************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Text
-*
-*	º¯Êý¹¦ÄÜ:	ÎÄ±¾ÏÔÊ¾²âÊÔ
-*
-*	Ëµ    Ã÷:	ÏÔÊ¾ÎÄ±¾£¬°üÀ¨¸÷ÖÖ×ÖÌå´óÐ¡µÄÖÐÎÄºÍASCII×Ö·û 
-*************************************************************************************************/
-void LCD_Test_Text(void)
-{
-	LCD_SetBackColor(LCD_BLACK); 			//	ÉèÖÃ±³¾°É«
-	LCD_Clear(); 								// ÇåÆÁ
-	
-	LCD_SetColor(LCD_WHITE);
-	LCD_SetAsciiFont(&ASCII_Font32); LCD_DisplayString(0, 0,"!#$'()*+,-.0123"); 						    		
-	LCD_SetAsciiFont(&ASCII_Font24); LCD_DisplayString(0,32,"!#$'()*+,-.012345678"); 				   
-	LCD_SetAsciiFont(&ASCII_Font20); LCD_DisplayString(0,56,"!#$'()*+,-.0123456789:;<");      	
-	LCD_SetAsciiFont(&ASCII_Font16); LCD_DisplayString(0,76,"!#$'()*+,-.0123456789:;<=>?@AB"); 	
-	LCD_SetAsciiFont(&ASCII_Font12); LCD_DisplayString(0,92,"!#$'()*+,-.0123456789:;<=>?@ABCDEFGHIJKL"); 	
-																																		
-	LCD_SetColor(LCD_CYAN);                                                                             
-	LCD_SetAsciiFont(&ASCII_Font12); LCD_DisplayString(0,104,"!#&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKL"); 	
-	LCD_SetAsciiFont(&ASCII_Font16); LCD_DisplayString(0,116,"!#&'()*+,-.0123456789:;<=>?@AB"); 	
-	LCD_SetAsciiFont(&ASCII_Font20); LCD_DisplayString(0,132,"!#&'()*+,-.0123456789:;<");		  	
-	LCD_SetAsciiFont(&ASCII_Font24); LCD_DisplayString(0,152,"!#&'()*+,-.012345678"); 				  	
-	LCD_SetAsciiFont(&ASCII_Font32); LCD_DisplayString(0,176,"!#&'()*+,-.0123"); 							  		
-
-	LCD_SetTextFont(&CH_Font24);			// ÉèÖÃ2424ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª2412
-	LCD_SetColor(LCD_YELLOW);				// ÉèÖÃ»­±Ê£¬»ÆÉ«
-	LCD_DisplayText(0, 216,"ASCII×Ö·û¼¯");
-
-	Delay_ms(2000);	// ÑÓÊ±µÈ´ý
-	LCD_Clear(); 								// ÇåÆÁ
-
-	LCD_SetTextFont(&CH_Font12);			// ÉèÖÃ1212ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª1206
-	LCD_SetColor(0X8AC6D1);					// ÉèÖÃ»­±Ê
-	LCD_DisplayText(14, 10,"1212:Â¹Ð¡°à¿Æ¼¼");	
-	
-	LCD_SetTextFont(&CH_Font16);			// ÉèÖÃ1616ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª1608
-	LCD_SetColor(0XC5E1A5);					// ÉèÖÃ»­±Ê
-	LCD_DisplayText(14, 30,"1616:Â¹Ð¡°à¿Æ¼¼");		
-	
-	LCD_SetTextFont(&CH_Font20);			// ÉèÖÃ2020ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª2010
-	LCD_SetColor(0XFFB549);					// ÉèÖÃ»­±Ê
-	LCD_DisplayText(14, 60,"2020:Â¹Ð¡°à¿Æ¼¼");		
-
-	LCD_SetTextFont(&CH_Font24);			// ÉèÖÃ2424ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª2412
-	LCD_SetColor(0XFF585D);					// ÉèÖÃ»­±Ê
-	LCD_DisplayText(14, 90,"2424:Â¹Ð¡°à¿Æ¼¼");		
-
-	LCD_SetTextFont(&CH_Font32);			// ÉèÖÃ3232ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª3216
-	LCD_SetColor(0xFFB6B9);					// ÉèÖÃ»­±Ê
-	LCD_DisplayText(14, 130,"3232:Â¹Ð¡°à¿Æ¼¼");		
-
-	LCD_SetTextFont(&CH_Font24);			// ÉèÖÃ2424ÖÐÎÄ×ÖÌå,ASCII×ÖÌå¶ÔÓ¦Îª2412
-	LCD_SetColor(LCD_WHITE);
- 	LCD_DisplayText(14, 180,"ÖÐÎÄÏÔÊ¾");	  
-
-	Delay_ms(2000);	// ÑÓÊ±µÈ´ý
-}
-/************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Variable
-*
-*	º¯Êý¹¦ÄÜ:	±äÁ¿ÏÔÊ¾£¬°üÀ¨ÕûÊýºÍÐ¡Êý
-*************************************************************************************************/
-void LCD_Test_Variable (void)
-{
-	uint16_t i;					// ¼ÆÊý±äÁ¿
-	int32_t	a = 0;			// ¶¨ÒåÕûÊý±äÁ¿£¬ÓÃÓÚ²âÊÔ
-	int32_t	b = 0;			// ¶¨ÒåÕûÊý±äÁ¿£¬ÓÃÓÚ²âÊÔ
-	int32_t	c = 0;			// ¶¨ÒåÕûÊý±äÁ¿£¬ÓÃÓÚ²âÊÔ
-
-	double p = 3.1415926;	// ¶¨Òå¸¡µãÊý±äÁ¿£¬ÓÃÓÚ²âÊÔ
-	double f = -1234.1234;	// ¶¨Òå¸¡µãÊý±äÁ¿£¬ÓÃÓÚ²âÊÔ
-	
-	LCD_SetBackColor(LCD_BLACK); 			//	ÉèÖÃ±³¾°É«
-	LCD_Clear(); 								// ÇåÆÁ
-	
-   LCD_SetTextFont(&CH_Font24);     
-	LCD_SetColor(LIGHT_CYAN);					// ÉèÖÃ»­±Ê£¬À¶ÂÌÉ«		
-	LCD_DisplayText(0,10,"ÕýÊý:");				
-	LCD_DisplayText(0,40,"¸ºÊý:");					
-				
-	LCD_SetColor(LIGHT_YELLOW);				// ÉèÖÃ»­±Ê£¬ÁÁ»ÆÉ«		
-	LCD_DisplayText(0, 80,"Ìî³ä¿Õ¸ñ:");	
-	LCD_DisplayText(0,110,"Ìî³ä0:");	
-	
-	LCD_SetColor(LIGHT_RED);					// ÉèÖÃ»­±Ê	£¬ÁÁºìÉ«		
-	LCD_DisplayText(0, 150,"ÕýÐ¡Êý:");	
-	LCD_DisplayText(0, 180,"¸ºÐ¡Êý:");		
-	
-	for(i=0;i<100;i++)
-   {
-		LCD_SetColor(LIGHT_CYAN);								// ÉèÖÃ»­±Ê	£¬À¶ÂÌÉ«	
-		LCD_ShowNumMode(Fill_Space);							// ¶àÓàÎ»Ìî³ä¿Õ¸ñ
-		LCD_DisplayNumber( 80,10, b+i*10, 4) ;				// ÏÔÊ¾±äÁ¿			
-		LCD_DisplayNumber( 80,40, c-i*10, 4) ;				// ÏÔÊ¾±äÁ¿			
-		
-		LCD_SetColor(LIGHT_YELLOW);								// ÉèÖÃ»­±Ê£¬ÁÁ»ÆÉ«	
-
-		LCD_ShowNumMode(Fill_Space);								// ¶àÓàÎ»Ìî³ä ¿Õ¸ñ
-		LCD_DisplayNumber( 130, 80, a+i*150, 8) ;				// ÏÔÊ¾±äÁ¿		
-
-		LCD_ShowNumMode(Fill_Zero);								// ¶àÓàÎ»Ìî³ä0      
-		LCD_DisplayNumber( 130,110, b+i*150, 8) ;				// ÏÔÊ¾±äÁ¿			
-		
-		LCD_SetColor(LIGHT_RED);									// ÉèÖÃ»­±Ê£¬ÁÁºìÉ«			
-		LCD_ShowNumMode(Fill_Space);								// ¶àÓàÎ»Ìî³ä¿Õ¸ñ		
-		LCD_DisplayDecimals( 100, 150, p+i*0.1,  6,3);		// ÏÔÊ¾Ð¡Êý	
-		LCD_DisplayDecimals( 100, 180, f+i*0.01, 11,4);		// ÏÔÊ¾Ð¡Êý		
-		
-		Delay_ms(15);				
-   }
-	Delay_ms(2500);		
-}
-/*************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Color
-*
-*	º¯Êý¹¦ÄÜ:	ÑÕÉ«²â
-*************************************************************************************************/
-void LCD_Test_Color(void)
-{
-	uint16_t i;					// ¼ÆÊý±äÁ¿
-	uint16_t y;
-// ÑÕÉ«²âÊÔ>>>>>	
-	LCD_SetBackColor(LCD_BLACK); //ÉèÖÃ±³¾°É«
-	LCD_Clear(); //ÇåÆÁ£¬Ë¢±³¾°É«
-	
-	LCD_SetTextFont(&CH_Font20);			// ÉèÖÃ×ÖÌå
-	LCD_SetColor(LCD_WHITE);				// ÉèÖÃ»­±ÊÑÕÉ«
-	LCD_DisplayText(0,0,"RGBÈý»ùÉ«:");
-
-	//Ê¹ÓÃ»­Ïßº¯Êý»æÖÆÈý»ùÉ«É«Ìõ
-	for(i=0;i<240;i++)
-	{
-		LCD_SetColor( LCD_RED-(i<<16) );
-      LCD_DrawLine_V(0+i,  20,10);
-	}
-	for(i=0;i<240;i++)
-	{
-		LCD_SetColor( LCD_GREEN-(i<<8) );
-      LCD_DrawLine_V(0+i,  35,10);
-	}
-	for(i=0;i<240;i++)
-	{
-		LCD_SetColor( LCD_BLUE-i );
-      LCD_DrawLine_V(0+i,  50,10);
-	}	
-
-   y = 70;
-   LCD_SetColor(LIGHT_CYAN);    LCD_FillRect(150,y+5     ,90,10);  LCD_DisplayString(0,y     ,"LIGHT_CYAN");	   
-	LCD_SetColor(LIGHT_MAGENTA); LCD_FillRect(150,y+20*1+5,90,10);  LCD_DisplayString(0,y+20*1,"LIGHT_MAGENTA");	
-	LCD_SetColor(LIGHT_YELLOW);  LCD_FillRect(150,y+20*2+5,90,10);  LCD_DisplayString(0,y+20*2,"LIGHT_YELLOW");	
-	LCD_SetColor(LIGHT_GREY);    LCD_FillRect(150,y+20*3+5,90,10);  LCD_DisplayString(0,y+20*3,"LIGHT_GREY");  	
-
-   LCD_SetColor(DARK_CYAN);     LCD_FillRect(150,y+20*4+5,90,10);  LCD_DisplayString(0,y+20*4,"DARK_CYAN");		
-	LCD_SetColor(DARK_MAGENTA);  LCD_FillRect(150,y+20*5+5,90,10);  LCD_DisplayString(0,y+20*5,"DARK_MAGENTA");	
-	LCD_SetColor(DARK_YELLOW);   LCD_FillRect(150,y+20*6+5,90,10);  LCD_DisplayString(0,y+20*6,"DARK_YELLOW");	
-	LCD_SetColor(DARK_GREY);     LCD_FillRect(150,y+20*7+5,90,10);	 LCD_DisplayString(0,y+20*7,"DARK_GREY");	
-
-	Delay_ms(2000);
-}
-
-/*************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Grahic
-*
-*	º¯Êý¹¦ÄÜ:	2DÍ¼ÐÎ»æÖÆ
-*************************************************************************************************/
-void LCD_Test_Grahic(void)
-{
-	LCD_SetBackColor(LCD_BLACK); //ÉèÖÃ±³¾°É«
-	LCD_Clear(); //ÇåÆÁ£¬Ë¢±³¾°É«	
-
-	LCD_SetColor(LCD_WHITE);	
-	LCD_DrawRect(0,0,240,240); 			//»æÖÆ¾ØÐÎ
-
-	LCD_SetColor(LCD_RED);    LCD_FillCircle(140,50,30);		//Ìî³äÔ²ÐÎ
-	LCD_SetColor(LCD_GREEN);  LCD_FillCircle(170,50,30); 	
-	LCD_SetColor(LCD_BLUE);   LCD_FillCircle(200,50,30);  	
-	
-	LCD_SetColor(LCD_YELLOW);
-	LCD_DrawLine(26,26,113,64);				//»­Ö±Ïß
-	LCD_DrawLine(35,22,106,81);				//»­Ö±Ïß
-	LCD_DrawLine(45,20, 93,100);				//»­Ö±Ïß
-	LCD_DrawLine(52,16, 69,108);				//»­Ö±Ïß
-	LCD_DrawLine(62,16, 44,108);				//»­Ö±Ïß
-	
-	LCD_SetColor(LIGHT_CYAN);
-	LCD_DrawCircle(120,170,30);			//»æÖÆÔ²ÐÎ
-	LCD_DrawCircle(120,170,20);   
-
-	LCD_SetColor(LIGHT_RED);	
-	LCD_DrawEllipse(120,170,90,40); 	//»æÖÆÍÖÔ² 
-	LCD_DrawEllipse(120,170,70,40); 	//»æÖÆÍÖÔ²    
-	LCD_SetColor(LIGHT_MAGENTA);	
-	LCD_DrawEllipse(120,170,100,50); 	//»æÖÆÍÖÔ²
-	LCD_DrawEllipse(120,170,110,60);  
-
-	Delay_ms(2000);		
-}
-/*************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Image
-*
-*	º¯Êý¹¦ÄÜ:	Í¼Æ¬ÏÔÊ¾²âÊÔ
-*************************************************************************************************/
-void LCD_Test_Image(void)
-{
-	LCD_SetBackColor(LCD_BLACK); 			//	ÉèÖÃ±³¾°É«
-	LCD_Clear(); 								// ÇåÆÁ
-	
-	LCD_SetColor( 0xffF6E58D);
-	LCD_DrawImage( 19, 21, 83, 83, Image_Android_83x83) ;	   // ÏÔÊ¾Í¼Æ¬
-
-	LCD_SetColor( 0xffDFF9FB);
-	LCD_DrawImage( 141, 21, 83, 83, Image_Message_83x83) ;	// ÏÔÊ¾Í¼Æ¬
-	
-	LCD_SetColor( 0xff9DD3A8);
-	LCD_DrawImage( 19, 140, 83, 83, Image_Toys_83x83) ;		// ÏÔÊ¾Í¼Æ¬
-	
-	LCD_SetColor( 0xffFF8753);
-	LCD_DrawImage( 141, 140, 83, 83, Image_Video_83x83) ;		// ÏÔÊ¾Í¼Æ¬
-
-	Delay_ms(2000);	
-}
-/*************************************************************************************************
-*	º¯ Êý Ãû:	LCD_Test_Direction
-*
-*	º¯Êý¹¦ÄÜ:	¸ü»»ÏÔÊ¾·½Ïò
-*************************************************************************************************/
-void  LCD_Test_Direction(void)
-{
-	int i;
-	for(i=0;i<4;i++)
-	{  
-      LCD_SetBackColor(LCD_BLACK); 			//	ÉèÖÃ±³¾°É«
-      LCD_Clear(); 								// ÇåÆÁ
-      LCD_SetTextFont(&CH_Font24);  
-	   LCD_SetColor( 0xffDFF9FB);         
-		switch (i)		// ÇÐ»»±³¾°É«
-		{
-			case 0:  
-            LCD_SetDirection(Direction_V);		   
-            LCD_DisplayText(20,20,"Direction_V"); 
-         break;	
-
-			case 1:  
-            LCD_SetDirection(Direction_H); 	
-            LCD_DisplayText(20,20,"Direction_H"); 
-         break;	
-
-			case 2:  
-            LCD_SetDirection(Direction_V_Flip); 
-            LCD_DisplayText(20,20,"Direction_V_Flip"); 
-         break;
-			case 3: 
-            LCD_SetDirection(Direction_H_Flip); 	
-            LCD_DisplayText(20,20,"Direction_H_Flip"); 
-         break;
-	
-			default:	break;			
-		}
-      LCD_SetColor( 0xffF6E58D);
-      LCD_DrawImage( 19, 80, 83, 83, Image_Android_83x83) ;	   // ÏÔÊ¾Í¼Æ¬
-      LCD_SetTextFont(&CH_Font32);
-      LCD_SetColor( 0xff9DD3A8);  
-      LCD_DisplayText(130,90,"Â¹Ð¡°à");
-      LCD_DisplayText(130,130,"¿Æ¼¼");
- 
-      Delay_ms(1000);	// ÑÓÊ±
-	}
+    while (1);
 }
