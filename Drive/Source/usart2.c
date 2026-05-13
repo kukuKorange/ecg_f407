@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-__align(8) uint8_t USART2_TX_BUF[USART2_MAX_SEND_LEN];
+__attribute__((aligned(8))) uint8_t USART2_TX_BUF[USART2_MAX_SEND_LEN];
 uint8_t USART2_RX_BUF[USART2_MAX_RECV_LEN];
 volatile uint8_t  usart2_raw_mode = 0;
 volatile uint16_t usart2_raw_len  = 0;

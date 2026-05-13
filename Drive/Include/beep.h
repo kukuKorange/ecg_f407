@@ -20,5 +20,6 @@
 
 void Beep_Init(void);
 void Beep_Alarm(uint16_t duration_ms);
+void Beep_AlarmUpdate(void);
 
 #endif
